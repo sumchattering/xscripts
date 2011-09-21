@@ -1,0 +1,38 @@
+#! /bin/bash
+#
+# Created By Sumeru Chatterjee on 09/21/11
+#
+# Simple utility to remove metadata files from Xcode project folder
+# This is especially useful with Xcode 4 or later where Xcode hangs as it tries to read metadata
+
+set -e
+set -o errexit
+
+ARGS=1
+E_INVALIDARGS=64
+E_BADARGS=65
+
+if [ $# -ne "$ARGS" ] 
+then 
+echo "Usage: `basename $0` Xcode-Project-File"; 
+exit $E_BADARGS;
+fi
+
+if [ ! -d "$1" -a ! -L "$1" ]
+then
+echo "Error:$1 is not a valid XCode Project File"
+exit $E_INVALIDARGS;
+fi 
+
+EXTENSION=`echo "$1" | cut -d'.' -f2`
+
+if [ "$EXTENSION" != "xcodeproj" ]
+then
+echo "Error:$1 is not a valid XCode Project File"
+exit $E_INVALIDARGS;
+fi
+
+find ~/Desktop/Usher/trunk/usher/usher.xcodeproj -maxdepth 1 -mindepth 1 ! -name "project.pbxproj" -print0 | xargs -0 rm -rf
+
+echo "Xcode Project Cleaned Successfully"
+exit 0 
