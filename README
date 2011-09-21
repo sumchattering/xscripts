@@ -1,0 +1,6 @@
+This repo contains a bunch of scripts that help with managing Xcode Projects
+
+1.resclean.py
+
+This script helps clean unused resources in Xcode Projects
+
