@@ -2,7 +2,7 @@
 #
 # Created By Sumeru Chatterjee on 09/21/11
 #
-# Simple utility to remove metadata files from Xcode project folder
+# Simple utility to remove metadata files ,build files and other temporary files from an Xcode Project
 # This is especially useful with Xcode 4 or later where Xcode hangs as it tries to read metadata
 
 set -e

@@ -1,9 +1,13 @@
 A set of tools that help managing Xcode Projects
 
-resclean.py
+resman
 -----------
-This script helps clean unused resources in Xcode Projects
+This script helps manage unused resources in Xcode Projects
 
 xcodeclean
 ----------
 This script helps clean all the metadata files in the Xcode Project Folder
+
+lint
+----------
+Validate or enforce style guidelines for a given source file.
