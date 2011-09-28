@@ -20,6 +20,9 @@ from subprocess import Popen
 from subprocess import PIPE
 import shutil
 
+from Pbxproj import Pbxproj
+from Pbxproj import relpath
+
 def main():
 	usage = '''%prog -p <Project Directory> -d <Resource Directory> -x <xcode-project> <options>
 
@@ -35,10 +38,10 @@ The source files that are searched are (*.h,*.m,*.xib,*.nib)'''
                     help="Search for resource usage from source code files in in this directory", 
                     action="append")
 	parser.add_option("-d", "--resourcedir", dest="resource_dir",
-                    help="REQUIRED:Get the resources from this directory",
+                    help="Get the list of resources from this directory",
                     action="append")
 	parser.add_option("-n", "--no-recursive", dest="norecurse",
-                    help="Get the resources from the first subdirectory in RESOURCE_DIR only",
+                    help="Get the resources from the first subdirectory in RESOURCE_DIR only (if the RESOURCE_DIR option is exercised)",
                     action="store_true")
 	parser.add_option("-v", "--verbose", dest="verbose",
                     help="Display verbose output",
@@ -49,39 +52,80 @@ The source files that are searched are (*.h,*.m,*.xib,*.nib)'''
 
 	(options, args) = parser.parse_args()
 
-	if not((options.__dict__["xcodeproject"]) or (options.__dict__["project_dir"])) or not((options.__dict__["xcodeproject"]) or (options.__dict__["resource_dir"])):
+	if not((options.__dict__["xcodeproject"]) or (options.__dict__["project_dir"])): 
+		print "\nError:Source List not found" 
+		print "Must specify either xcodeproject or project_dir for getting list of source files"
 		parser.print_help()
 		exit(0)
-
-	xcodeproject = os.path.abspath(options.__dict__["xcodeproject"][0])
-	resource_dir = os.path.abspath(options.__dict__["resource_dir"][0])
-	project_dir = os.path.abspath(options.__dict__["project_dir"][0])
+				
+	xcodeproject = None
+	if options.__dict__["xcodeproject"]:
+		xcodeprojectfile = os.path.abspath(options.__dict__["xcodeproject"][0])
+		xcodeproject = Pbxproj.get_pbxproj_by_name(xcodeprojectfile)
+		
+	resource_dir = None
+	if options.__dict__["resource_dir"]:
+		resource_dir = os.path.abspath(options.__dict__["resource_dir"][0])
+	
+	project_dir = None	
+	if options.__dict__["project_dir"]:
+		project_dir = os.path.abspath(options.__dict__["project_dir"][0])
+	
 	verbose = options.__dict__['verbose']
 	norecurse = options.__dict__['norecurse']
 	move = options.__dict__['move']
-		
-	resourcelist = get_resource_files(resource_dir,norecurse)
 	
-	print "\nCalculating Sizes ..\n\n"	
-	
-	totalsize = 0
-	sizedictionary = {}
-	for file in resourcelist:
-		sizedictionary[file] = os.path.getsize(file)
-		totalsize += sizedictionary[file]
-	
-	
-	if resourcelist:
-		print "%(num)s resource files found in resource directory %(dir)s\n\n"%{'num':len(resourcelist),'dir':resource_dir}
-		if verbose:
-			print "Resource Files"
-			print "-----------------\n"
-			print "\n".join(os.path.basename(file)+" Size:"+convert_bytes(sizedictionary[file]) for file in resourcelist)
-			print "\n\n"
-	else:
-		print "\n\nERROR:No resource files found in directory %(dir)s\n\n"%{'dir':resource_dir}
-		exit(0)
+	if resource_dir:	
+		resourcelist = get_resource_files(resource_dir,norecurse)
+		if not resourcelist:
+			print "\n\nERROR:No resource files found in directory %(dir)s\n\n"%{'dir':resource_dir}
+			exit(0)	
 				
+		print "\nCalculating Sizes ..\n\n"	
+		totalsize = 0
+		sizedictionary = {}
+		for file in resourcelist:
+			sizedictionary[file] = os.path.getsize(file)
+			totalsize += sizedictionary[file]		
+				
+				
+		# if the user has given an Xcodeproject file then find resources used by the project
+		if xcodeproject:
+			projectresourcefiles = xcodeproject.get_built_resources()			
+			filtered_resourcelist = []
+			for resourcefile in resourcelist:
+				filename = os.path.basename(resourcefile)
+				found = False
+				for resource in projectresourcefiles:
+					if filename == os.path.basename(resource):
+						found = True
+						break
+				if found:
+					filtered_resourcelist.append(resourcefile)
+			
+			filtered_totalsize=0
+			for file in filtered_resourcelist:
+				sizedictionary[file] = os.path.getsize(file)
+				filtered_totalsize += sizedictionary[file]
+			
+			total_resourcelist = resourcelist
+			resourcelist = filtered_resourcelist		
+			
+			if not resourcelist:
+				print "\n\nERROR:No resource files found in directory %(dir)s that are used in project %(proj)s\n\n"%{'dir':resource_dir,'proj':os.path.basename(xcodeprojectfile)}
+				exit(0)			
+	else:
+		print "\nError:RESOURCE DIRECTORY NOT SPECIFIED" 
+		parser.print_help()	
+		exit(0)
+			
+	
+	print "%(num)s resource files found in resource directory %(dir)s\n\n"%{'num':len(resourcelist),'dir':resource_dir}
+	if verbose:
+		print "Resource Files"			
+		print "-----------------\n"
+		print "\n".join(os.path.basename(file)+" Size:"+convert_bytes(sizedictionary[file]) for file in resourcelist)
+		print "\n\n"
 			
 	sourcelist = get_project_files_from_dir(project_dir)
 	if sourcelist:
@@ -119,22 +163,31 @@ The source files that are searched are (*.h,*.m,*.xib,*.nib)'''
 			if verbose:
 				"Resource %(file)s Size:%(size)s - Invalid"%{'file':os.path.basename(resource_file),'size':convert_bytes(sizedictionary[resource_file])}
 	
-	print "\n\nSummary\n--------------"
-	print "Total Number of Resources :%d"%len(resourcelist)
-	print "Total Size of Resources :%s"%convert_bytes(totalsize)
-	print "Total Number of Invalid Resources :%d"%len(invalid_resource_list)
-	print "Total Size of Invalid Resources :%s"%convert_bytes(invalidsize)
 	os.remove(sourcelist_file)
+	print "\n\nSummary\n--------------"
+	
+	if not xcodeproject:
+		print "Total Number of Resources :%d"%len(resourcelist)
+		print "Total Size of Resources :%s"%convert_bytes(totalsize)
+		print "Total Number of Invalid Resources :%d"%len(invalid_resource_list)
+		print "Total Size of Invalid Resources :%s"%convert_bytes(invalidsize)
+	else:
+		print "Total Number of Resources :%d"%len(total_resourcelist)
+		print "Total Size of Resources :%s"%convert_bytes(totalsize)
+		print "Total Number of Resources used in project :%d"%len(resourcelist)
+		print "Total Size of Resources used in project :%s"%convert_bytes(filtered_totalsize)
+		print "Total Number of Unused Resources used in project:%d"%len(invalid_resource_list)
+		print "Total Size of Unused Resources used in project:%s"%convert_bytes(invalidsize)
 
 	if move and invalid_resource_list:
-		invalid_dir = resource_dir+"/"+"invalid"
+		invalid_dir = resource_dir+"/"+"unused"
 
 		if not os.path.exists(invalid_dir):
 			os.makedirs(invalid_dir)
 			
 		for resource_file in invalid_resource_list:
 			src = resource_file
-			dst = invalid_dir+"/"+os.path.basename(resource_file)
+			dst = os.path.join(invalid_dir,relpath(resource_dir,src))
 			shutil.move(src,dst)
 	
 	print "\n\n"

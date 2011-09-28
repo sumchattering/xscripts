@@ -587,7 +587,36 @@ class Pbxproj(object):
 			filenames.append(os.path.join(project_path, filepath.strip('"')))
 
 		return filenames
+	
+	# Get all resource files that are "built" in this project.This includes files built for libraries,
+	# executables and unit testing.
+	def get_built_resources(self):
+		
+		project_data = self.get_project_data()
+		match = re.search('\/\* Begin PBXResourcesBuildPhase section \*\/\n((?:.|\n)+?)\/\* End PBXResourcesBuildPhase section \*\/', project_data)
 
+		if not match:
+			logging.error("Couldn't find PBXResourcesBuildPhase section.")
+			return None
+		
+		(buildphasedata, ) = match.groups()
+
+		buildfileguids = re.findall('[ \t]+([A-Z0-9]+) \/\* .+ \*\/,\n', buildphasedata)
+		
+		project_path = os.path.dirname(os.path.abspath(self.xcodeprojpath()))
+		
+		filenames = []
+		
+		for buildfileguid in buildfileguids:
+			filerefguid = self.get_filerefguid_from_buildfileguid(buildfileguid)
+			filepath = self.get_filepath_from_filerefguid(filerefguid)
+			
+			if filepath:
+				filenames.append(os.path.join(filepath.replace("\"","")))
+					
+		return filenames	
+	
+	
 
 	# Get all header files that are "built" in this project. This includes files built for
 	# libraries, executables, and unit testing.
