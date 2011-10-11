@@ -1,0 +1,21 @@
+#! /bin/bash
+# Script that will run find an xcode project in any directory and run it in xcode
+# The name of the xcode project should be same as the name of the parent directory
+# The project can be in any branch of the directory tree
+# If there are multiple projects with the name of the parent directory then the one
+# which is found first by grep will be opened(I think it does BFS)
+#
+# Created By Sumeru Chatterjee
+
+projectname=${PWD##*/}.xcodeproj
+echo "Finding Xcode Project with name $projectname.."
+
+file=$(find . -name $projectname | tail -1)
+if [ -z $file ];
+then 
+	echo "Project does not exist";
+	exit 0; 
+else
+	echo "Opening $file";
+	open -a Xcode $file
+fi;
