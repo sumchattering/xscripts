@@ -10,7 +10,7 @@
 projectname=${PWD##*/}.xcodeproj
 echo "Finding Xcode Project with name $projectname.."
 
-file=$(find . -name $projectname | tail -1)
+file=$(find . -iname $projectname | tail -1)
 if [ -z $file ];
 then 
 	echo "Project does not exist";

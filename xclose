@@ -1,0 +1,4 @@
+#! /bin/bash
+# Script that will close xcode if it is open
+
+osascript -e 'quit app "xcode"'

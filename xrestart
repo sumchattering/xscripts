@@ -1,0 +1,6 @@
+#! /bin/bash
+# Script that will close xcode and then rerun it with the project in the current directory
+
+xclose
+xopen
+
