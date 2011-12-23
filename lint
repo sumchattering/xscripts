@@ -235,7 +235,7 @@ def lint_basics(filedata, filename, linenofilter, isdelinting = False):
 
                                 # This is not something we can fix with the delinter.
                                 if isdelinting:
-                                        if re.match(r'/+', prevline):
+                                        if re.match(r'/+', prevline) and not re.match(r'.+[a-zA-Z0-9_]+.+',prevline):
                                                 newfilelines.pop()
                                         newfilelines.append(gdivider)
                                         nwarningsfixed = nwarningsfixed + 1

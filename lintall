@@ -1,0 +1,7 @@
+#! /bin/bash
+# Script that will find all .h and .m files recursively in current directory and then lint them
+#
+# Created By Sumeru Chatterjee
+
+
+find . -iname "*.h" -o -iname "*.m" | xargs lint -d
