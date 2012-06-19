@@ -1,3 +1,16 @@
+# This script needs to be updated urgently
+# Heres how the scripts should work
+# 1) We do a recursive search for a project with the name of the current gitroot directory 
+# if we are in a git repo or the current parent directory if we are not
+# 2) If this doesnt work and we are in a git repo then we add search for a project with all the directory
+# names until the git repo
+# 3) The script can take a parameter and then use the word in its matches
+# 4) The script can also show the user the history of all projects it has opened before and the user can select 
+# one of them
+#
+#
+# Estimated Time Requred - One day
+
 #! /bin/bash
 # Script that will run find an xcode project in any directory and run it in xcode
 # The name of the xcode project should be same as the name of the parent directory
