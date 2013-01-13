@@ -20,14 +20,21 @@
 #
 # Created By Sumeru Chatterjee
 
+wildcardproject="*.xcodeproj"
 projectname=${PWD##*/}.xcodeproj
 echo "Finding Xcode Project with name $projectname.."
 
 file=$(find . -iname $projectname | tail -1)
 if [ -z $file ];
 then 
-	echo "Project does not exist";
-	exit 0; 
+	echo "No such files found. Now searching for any xcode project..";
+	file=$(find . -iname $wildcardproject | tail -1)
+fi
+
+if [ -z $file ];
+then 
+	echo "No xcode projects found";
+	file=$(find . -iname projectname | tail -1)
 else
 	echo "Opening $file";
 	open -a Xcode $file
